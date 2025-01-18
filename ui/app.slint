@@ -1,32 +1,38 @@
 export struct Vec2 {
-    x: int,
-    y:int,
+    vx:length,
+    vy:length,
 }
 
-export struct Boxs {
-    vector: Vec2,
-    speed: int,
-    posx: int,
-    posy: int,
+export struct Data { 
+    speed: Vec2,
+    x: length,
+    y: length,
+    color: color,
 }
 
 export component App inherits Window {
-    width: 500px;
-    height: 500px;
+    preferred-width: 500px;
+    preferred-height: 500px;
     background: #202424;
     callback update();
-    in-out property <[Boxs]> boxs;
+    property <duration> elapsed: 1s / 60;
+    in-out property <[Data]> boxs;
+    in-out property <length> side_len;
     in-out property <length> win_width <=> self.width;
     in-out property <length> win_height <=> self.height;
-    for box in boxs: Rectangle {
-        width: 10px;
-        height: 10px;
-        background: orange;
-        x: box.posx * 1px;
-        y: box.posy * 1px;
+    for abox in boxs: Rectangle {
+        width: side_len;
+        height: side_len;
+        background: abox.color;
+        x: abox.x;
+        y: abox.y;
+        animate x, y {
+            duration: elapsed;
+            easing: ease;
+        }
     }
     Timer {
-        interval: 1s / 60;
+        interval: elapsed;
         triggered => {
             update();
         }
