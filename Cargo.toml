@@ -1,0 +1,11 @@
+[package]
+name = "slide-box"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rand = "0.8.5"
+slint = "1.9.2"
+
+[build-dependencies]
+slint-build = "1.9.2"

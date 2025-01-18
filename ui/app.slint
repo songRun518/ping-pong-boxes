@@ -1,0 +1,34 @@
+export struct Vec2 {
+    x: int,
+    y:int,
+}
+
+export struct Boxs {
+    vector: Vec2,
+    speed: int,
+    posx: int,
+    posy: int,
+}
+
+export component App inherits Window {
+    width: 500px;
+    height: 500px;
+    background: #202424;
+    callback update();
+    in-out property <[Boxs]> boxs;
+    in-out property <length> win_width <=> self.width;
+    in-out property <length> win_height <=> self.height;
+    for box in boxs: Rectangle {
+        width: 10px;
+        height: 10px;
+        background: orange;
+        x: box.posx * 1px;
+        y: box.posy * 1px;
+    }
+    Timer {
+        interval: 1s / 60;
+        triggered => {
+            update();
+        }
+    }
+}
