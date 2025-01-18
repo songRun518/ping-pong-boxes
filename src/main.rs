@@ -5,6 +5,33 @@ use slint::{Color, Model, ModelRc, VecModel};
 
 slint::include_modules!();
 
+const COLORS: [(u8, u8, u8); 24] = [
+    (0, 0, 128),
+    (0, 0, 255),
+    (0, 128, 0),
+    (0, 128, 128),
+    (0, 128, 255),
+    (0, 255, 0),
+    (0, 255, 128),
+    (0, 255, 255),
+    (128, 0, 0),
+    (128, 0, 128),
+    (128, 0, 255),
+    (128, 128, 0),
+    (128, 128, 255),
+    (128, 255, 0),
+    (128, 255, 128),
+    (128, 255, 255),
+    (255, 0, 0),
+    (255, 0, 128),
+    (255, 0, 255),
+    (255, 128, 0),
+    (255, 128, 128),
+    (255, 128, 255),
+    (255, 255, 0),
+    (255, 255, 128),
+];
+
 fn main() -> Result<(), slint::PlatformError> {
     let app = App::new()?;
 
@@ -22,7 +49,13 @@ fn main() -> Result<(), slint::PlatformError> {
             .map(|mut abox| {
                 abox.x += abox.speed.vx;
                 abox.y += abox.speed.vy;
-                collision(&mut abox.speed, abox.x, abox.y, width, height, side_len);
+
+                if abox.x <= 0.0 || abox.x >= width - side_len {
+                    abox.speed.vx = -abox.speed.vx;
+                }
+                if abox.y <= 0.0 || abox.y >= height - side_len {
+                    abox.speed.vy = -abox.speed.vy;
+                }
 
                 abox
             })
@@ -34,33 +67,22 @@ fn main() -> Result<(), slint::PlatformError> {
     app.run()
 }
 
-fn collision(Vec2 { vx, vy }: &mut Vec2, x: f32, y: f32, width: f32, height: f32, side_len: f32) {
-    if x <= 0.0 || x >= width - side_len {
-        *vx = -*vx;
-        // println!("vx change");
-    }
-    if y <= 0.0 || y >= height - side_len {
-        *vy = -*vy;
-        // println!("vy change");
-    }
-}
-
 fn init(app: &App) {
     let width = 500.0;
     let height = 500.0;
     let side_len = 50.0;
     let mut rng = rand::thread_rng();
 
-    let model = (0..10)
-        .map(|_| {
+    let model = (0..24)
+        .map(|idx| {
             let vx = rng.gen_range(-5.0..=5.0);
             let vy = rng.gen_range(-5.0..=5.0);
             let speed = Vec2 { vx, vy };
             let x = rng.gen_range(0.0..width - side_len);
             let y = rng.gen_range(0.0..height - side_len);
-            let color = Color::from_rgb_u8(255, 128, 0);
+            let (r, g, b) = COLORS[idx];
+            let color = Color::from_rgb_u8(r, g, b);
 
-            // dbg!(vx, vy);
             Data { speed, x, y, color }
         })
         .collect::<VecModel<_>>();
