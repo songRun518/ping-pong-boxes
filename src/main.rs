@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use rand::Rng;
 use slint::{Color, Model, ModelRc, VecModel};
 
