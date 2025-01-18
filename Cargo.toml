@@ -3,6 +3,10 @@ name = "ping-pong-boxes"
 version = "0.1.0"
 edition = "2024"
 
+[profile.release]
+codegen-units = 1
+lto = "fat"
+
 [dependencies]
 rand = "0.8.5"
 slint = "1.9.2"
