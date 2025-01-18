@@ -12,12 +12,12 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = app.clone_strong();
     app.on_update(move || {
-        let boxs = ui.get_boxs();
+        let boxes = ui.get_boxes();
         let side_len = ui.get_side_len();
         let width = ui.get_win_width();
         let height = ui.get_win_height();
 
-        let newboxs = boxs
+        let newboxes = boxes
             .iter()
             .map(|mut abox| {
                 abox.x += abox.speed.vx;
@@ -28,7 +28,7 @@ fn main() -> Result<(), slint::PlatformError> {
             })
             .collect::<VecModel<_>>();
 
-        ui.set_boxs(ModelRc::new(newboxs));
+        ui.set_boxes(ModelRc::new(newboxes));
     });
 
     app.run()
@@ -68,5 +68,5 @@ fn init(app: &App) {
     app.set_win_width(width);
     app.set_win_height(height);
     app.set_side_len(side_len);
-    app.set_boxs(ModelRc::new(model));
+    app.set_boxes(ModelRc::new(model));
 }

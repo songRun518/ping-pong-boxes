@@ -16,11 +16,11 @@ export component App inherits Window {
     background: #202424;
     callback update();
     property <duration> elapsed: 1s / 60;
-    in-out property <[Data]> boxs;
+    in-out property <[Data]> boxes;
     in-out property <length> side_len;
     in-out property <length> win_width <=> self.width;
     in-out property <length> win_height <=> self.height;
-    for abox in boxs: Rectangle {
+    for abox in boxes: Rectangle {
         width: side_len;
         height: side_len;
         background: abox.color;
