@@ -20,6 +20,7 @@ export component App inherits Window {
     background: #202424;
     callback update();
     callback newse(int, length, length);
+    callback moves(length, length);
     property <bool> run: true;
     property <duration> elapsed: 1s / 60;
     in-out property <[Data]> boxes;
@@ -46,6 +47,16 @@ export component App inherits Window {
         }
     }
 
+    touch := TouchArea {
+        clicked => {
+            run = true;
+        }
+        moved => {
+            run = false;
+            moves(self.mouse-x, self.mouse-y);
+        }
+    }
+
     Button {
         text: "new";
         width: 55px;
@@ -54,6 +65,7 @@ export component App inherits Window {
         y: 10px;
         z: 10;
         clicked => {
+            touch.enabled = false;
             dialog.visible = true;
             run = false;
         }
@@ -91,6 +103,7 @@ export component App inherits Window {
                 StandardButton {
                     kind: cancel;
                     clicked => {
+                        touch.enabled = true;
                         dialog.visible = false;
                         run = true;
                     }
@@ -103,6 +116,7 @@ export component App inherits Window {
                             number.text.to-float(),
                             size.text.to-float() * 1px, 
                             speed.text.to-float() * 1px);
+                        touch.enabled = true;
                         dialog.visible = false;
                         run = true;
                     }

@@ -36,8 +36,9 @@ fn main() -> Result<(), slint::PlatformError> {
     let app = App::new()?;
 
     init(&app);
-    on_update(&app);
     on_newse(&app);
+    on_update(&app);
+    on_moves(&app);
 
     app.run()
 }
@@ -66,6 +67,35 @@ fn init(app: &App) {
     app.set_win_height(height);
     app.set_side_len(side_len);
     app.set_boxes(ModelRc::new(model));
+}
+
+fn on_newse(app: &App) {
+    let ui = app.clone_strong();
+    app.on_newse(move |number, size, speed| {
+        let width = ui.get_win_width();
+        let height = ui.get_win_height();
+        let side_len = size;
+        let mut rng = rand::thread_rng();
+
+        let model = (0..number)
+            .map(|idx| {
+                let vx = rng.gen_range(-speed..=speed);
+                let vy = rng.gen_range(-speed..=speed);
+                let speed = Vec2 { vx, vy };
+                let x = rng.gen_range(0.0..width - side_len);
+                let y = rng.gen_range(0.0..height - side_len);
+                let (r, g, b) = COLORS[idx as usize % COLORS.len()];
+                let color = Color::from_rgb_u8(r, g, b);
+
+                Data { speed, x, y, color }
+            })
+            .collect::<VecModel<_>>();
+
+        ui.set_win_width(width);
+        ui.set_win_height(height);
+        ui.set_side_len(side_len);
+        ui.set_boxes(ModelRc::new(model));
+    });
 }
 
 fn on_update(app: &App) {
@@ -97,31 +127,21 @@ fn on_update(app: &App) {
     });
 }
 
-fn on_newse(app: &App) {
+fn on_moves(app: &App) {
     let ui = app.clone_strong();
-    app.on_newse(move |number, size, speed| {
-        let width = ui.get_win_width();
-        let height = ui.get_win_height();
-        let side_len = size;
-        let mut rng = rand::thread_rng();
+    app.on_moves(move |ax, ay| {
+        let boxes = ui.get_boxes();
 
-        let model = (0..number)
-            .map(|idx| {
-                let vx = rng.gen_range(-speed..=speed);
-                let vy = rng.gen_range(-speed..=speed);
-                let speed = Vec2 { vx, vy };
-                let x = rng.gen_range(0.0..width - side_len);
-                let y = rng.gen_range(0.0..height - side_len);
-                let (r, g, b) = COLORS[idx as usize % COLORS.len()];
-                let color = Color::from_rgb_u8(r, g, b);
+        let newboxes = boxes
+            .iter()
+            .map(|mut abox| {
+                abox.x = ax;
+                abox.y = ay;
 
-                Data { speed, x, y, color }
+                abox
             })
             .collect::<VecModel<_>>();
 
-        ui.set_win_width(width);
-        ui.set_win_height(height);
-        ui.set_side_len(side_len);
-        ui.set_boxes(ModelRc::new(model));
+        ui.set_boxes(ModelRc::new(newboxes));
     });
 }
