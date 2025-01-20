@@ -32,17 +32,6 @@ const COLORS: [(u8, u8, u8); 24] = [
     (255, 255, 128),
 ];
 
-fn main() -> Result<(), slint::PlatformError> {
-    let app = App::new()?;
-
-    init(&app);
-    on_newse(&app);
-    on_update(&app);
-    on_moves(&app);
-
-    app.run()
-}
-
 fn init(app: &App) {
     let width = 500.0;
     let height = 500.0;
@@ -67,6 +56,17 @@ fn init(app: &App) {
     app.set_win_height(height);
     app.set_side_len(side_len);
     app.set_boxes(ModelRc::new(model));
+}
+
+fn main() -> Result<(), slint::PlatformError> {
+    let app = App::new()?;
+
+    init(&app);
+    on_newse(&app);
+    on_update(&app);
+    on_moves(&app);
+
+    app.run()
 }
 
 fn on_newse(app: &App) {

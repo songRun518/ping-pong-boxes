@@ -1,4 +1,4 @@
-import { Button, StandardButton, TextEdit } from "std-widgets.slint";
+import { Button, StandardButton, TextEdit, ComboBox } from "std-widgets.slint";
 
 export struct Vec2 {
     vx:length,
@@ -12,6 +12,11 @@ export struct Data {
     color: color,
 }
 
+export enum SportStyle{
+    Collect,
+    Follow,
+}
+
 
 export component App inherits Window {
     title: "Ping Pong Boxes";
@@ -23,6 +28,7 @@ export component App inherits Window {
     callback moves(length, length);
     property <bool> run: true;
     property <duration> elapsed: 1s / 60;
+    property <SportStyle> sport_style: Collect;
     in-out property <[Data]> boxes;
     in-out property <length> side_len;
     in-out property <length> win_width <=> self.width;
@@ -38,25 +44,8 @@ export component App inherits Window {
             easing: ease;
         }
     }
-    Timer {
-        interval: elapsed;
-        triggered => {
-            if run {
-                update();
-            }
-        }
-    }
 
-    touch := TouchArea {
-        clicked => {
-            run = true;
-        }
-        moved => {
-            run = false;
-            moves(self.mouse-x, self.mouse-y);
-        }
-    }
-
+    //new session
     Button {
         text: "new";
         width: 55px;
@@ -121,6 +110,44 @@ export component App inherits Window {
                         run = true;
                     }
                 }
+            }
+        }
+    }
+
+    //run
+    Timer {
+        interval: elapsed;
+        triggered => {
+            if run {
+                update();
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => {
+            run = true;
+        }
+        moved => {
+            if sport_style == SportStyle.Collect {
+                run = false;
+                moves(self.mouse-x, self.mouse-y);
+            }
+        }
+    }
+
+    ComboBox {
+        width: 100px;
+        x: root.width - self.width - 10px;
+        y: 10px;
+        z: 10;
+        model: ["collect", "follow"];
+        current-index: 0;
+        selected(current-value) => {
+            if current-value == "collect" {
+                sport_style = SportStyle.Collect;
+            } else if current-value == "follow" {
+                sport_style = SportStyle.Follow;
             }
         }
     }
