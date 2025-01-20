@@ -2,5 +2,6 @@
 1. collect boxes
 2. let boxes follow cursor
 <hr>
-<img src="shots/shot0.png" />
-<img src="shots/shot1.png" />
+<img src="shots/0.png" />
+<img src="shots/1.png" />
+<img src="shots/ui.png" />
