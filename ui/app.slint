@@ -17,7 +17,6 @@ export enum SportStyle{
     Follow,
 }
 
-
 export component App inherits Window {
     title: "Ping Pong Boxes";
     preferred-width: 500px;
@@ -25,7 +24,8 @@ export component App inherits Window {
     background: #202424;
     callback update();
     callback newse(int, length, length);
-    callback moves(length, length);
+    callback moves_collect(length, length);
+    callback moves_follow(length, length);
     property <bool> run: true;
     property <duration> elapsed: 1s / 60;
     property <SportStyle> sport_style: Collect;
@@ -124,18 +124,6 @@ export component App inherits Window {
         }
     }
 
-    touch := TouchArea {
-        clicked => {
-            run = true;
-        }
-        moved => {
-            if sport_style == SportStyle.Collect {
-                run = false;
-                moves(self.mouse-x, self.mouse-y);
-            }
-        }
-    }
-
     ComboBox {
         width: 100px;
         x: root.width - self.width - 10px;
@@ -148,6 +136,20 @@ export component App inherits Window {
                 sport_style = SportStyle.Collect;
             } else if current-value == "follow" {
                 sport_style = SportStyle.Follow;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => {
+            run = true;
+        }
+        moved => {
+            if sport_style == SportStyle.Collect {
+                run = false;
+                moves_collect(self.mouse-x, self.mouse-y);
+            } else if sport_style == SportStyle.Follow {
+                moves_follow(self.mouse-x, self.mouse-y);
             }
         }
     }

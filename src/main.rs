@@ -1,5 +1,7 @@
 #![windows_subsystem = "windows"]
 
+mod moves;
+
 use rand::Rng;
 use slint::{Color, Model, ModelRc, VecModel};
 
@@ -64,7 +66,7 @@ fn main() -> Result<(), slint::PlatformError> {
     init(&app);
     on_newse(&app);
     on_update(&app);
-    on_moves(&app);
+    moves::on_moves(&app);
 
     app.run()
 }
@@ -118,25 +120,6 @@ fn on_update(app: &App) {
                 if abox.y <= 0.0 || abox.y >= height - side_len {
                     abox.speed.vy = -abox.speed.vy;
                 }
-
-                abox
-            })
-            .collect::<VecModel<_>>();
-
-        ui.set_boxes(ModelRc::new(newboxes));
-    });
-}
-
-fn on_moves(app: &App) {
-    let ui = app.clone_strong();
-    app.on_moves(move |ax, ay| {
-        let boxes = ui.get_boxes();
-
-        let newboxes = boxes
-            .iter()
-            .map(|mut abox| {
-                abox.x = ax;
-                abox.y = ay;
 
                 abox
             })
