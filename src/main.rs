@@ -2,64 +2,17 @@
 
 use std::ops::RangeInclusive;
 
-use eframe::egui;
+use eframe::egui::{self, scroll_area};
 use rand::Rng;
 
-const COLORS: [(u8, u8, u8); 54] = [
+const COLORS: [(u8, u8, u8); 7] = [
     (255, 0, 0),
-    (255, 30, 0),
-    (255, 60, 0),
-    (255, 90, 0),
-    (255, 120, 0),
-    (255, 150, 0),
-    (255, 180, 0),
-    (255, 210, 0),
-    (255, 240, 0),
+    (255, 127, 0),
     (255, 255, 0),
-    (225, 255, 0),
-    (195, 255, 0),
-    (165, 255, 0),
-    (135, 255, 0),
-    (105, 255, 0),
-    (75, 255, 0),
-    (45, 255, 0),
-    (15, 255, 0),
     (0, 255, 0),
-    (0, 255, 30),
-    (0, 255, 60),
-    (0, 255, 90),
-    (0, 255, 120),
-    (0, 255, 150),
-    (0, 255, 180),
-    (0, 255, 210),
-    (0, 255, 240),
-    (0, 255, 255),
-    (0, 225, 255),
-    (0, 195, 255),
-    (0, 165, 255),
-    (0, 135, 255),
-    (0, 105, 255),
-    (0, 75, 255),
-    (0, 45, 255),
-    (0, 15, 255),
     (0, 0, 255),
-    (30, 0, 255),
-    (60, 0, 255),
-    (90, 0, 255),
-    (120, 0, 255),
-    (150, 0, 255),
-    (180, 0, 255),
-    (210, 0, 255),
-    (240, 0, 255),
-    (255, 0, 255),
-    (255, 0, 225),
-    (255, 0, 195),
-    (255, 0, 165),
-    (255, 0, 135),
-    (255, 0, 105),
-    (255, 0, 75),
-    (255, 0, 45),
-    (255, 0, 15),
+    (75, 0, 130),
+    (238, 130, 238),
 ];
 
 fn main() -> eframe::Result {
@@ -112,6 +65,8 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
 
+        let screen = ctx.input(|i| i.screen_rect);
+
         //setup
         if !self.setup {
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -141,6 +96,9 @@ impl eframe::App for MyApp {
 
         //normal update
         egui::CentralPanel::default().show(ctx, |ui| {
+            let resp = ui.interact(ui.max_rect(), ui.id(), egui::Sense::drag());
+            let normal_run = !resp.dragged();
+
             ui.spacing_mut().text_edit_width = 80.0;
             ui.spacing_mut().button_padding.x = 15.0;
 
@@ -151,7 +109,7 @@ impl eframe::App for MyApp {
             ui.label("speed:");
             let _ = ui.text_edit_singleline(&mut self.t_speed_range);
             ui.add_space(5.0);
-            let btn = ui.button("set");
+            let btn = ui.button("new");
 
             if btn.clicked() {
                 if let Ok(n) = self.t_number.trim().parse::<usize>() {
@@ -166,19 +124,31 @@ impl eframe::App for MyApp {
                 self.setup = false;
             }
 
+            //move
             for (idx, abox) in self.boxes.iter_mut().enumerate() {
-                abox.translate(self.boxes_speeds[idx]);
+                if normal_run {
+                    abox.translate(self.boxes_speeds[idx]);
 
+                    if let egui::Shape::Rect(rect) = abox {
+                        let x = (rect.rect.max.x + rect.rect.min.x) / 2.0;
+                        let y = (rect.rect.max.y + rect.rect.min.y) / 2.0;
+
+                        if x <= 0.0 || x >= screen.width() {
+                            self.boxes_speeds[idx].x *= -1.0;
+                        }
+                        if y <= 0.0 || y >= screen.height() {
+                            self.boxes_speeds[idx].y *= -1.0;
+                        }
+                    }
+
+                    continue;
+                }
+
+                //collect mode
                 if let egui::Shape::Rect(rect) = abox {
-                    let x = rect.rect.min.x;
-                    let y = rect.rect.min.y;
-
-                    if x <= 0.0 || x >= ui.available_width() {
-                        self.boxes_speeds[idx].x *= -1.0;
-                    }
-                    if y <= 0.0 || y >= ui.available_height() {
-                        self.boxes_speeds[idx].y *= -1.0;
-                    }
+                    let scale = rect.rect.max - rect.rect.min;
+                    rect.rect.min = resp.interact_pointer_pos().unwrap();
+                    rect.rect.max = rect.rect.min + scale;
                 }
             }
 
