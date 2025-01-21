@@ -2,7 +2,7 @@
 
 use std::ops::RangeInclusive;
 
-use eframe::egui::{self, scroll_area};
+use eframe::egui;
 use rand::Rng;
 
 const COLORS: [(u8, u8, u8); 7] = [
