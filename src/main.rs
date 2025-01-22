@@ -1,130 +1,238 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod moves;
+use std::{fmt::Display, ops::RangeInclusive};
 
+use eframe::egui;
 use rand::Rng;
-use slint::{Color, Model, ModelRc, VecModel};
 
-slint::include_modules!();
-
-const COLORS: [(u8, u8, u8); 24] = [
-    (0, 0, 128),
-    (0, 0, 255),
-    (0, 128, 0),
-    (0, 128, 128),
-    (0, 128, 255),
-    (0, 255, 0),
-    (0, 255, 128),
-    (0, 255, 255),
-    (128, 0, 0),
-    (128, 0, 128),
-    (128, 0, 255),
-    (128, 128, 0),
-    (128, 128, 255),
-    (128, 255, 0),
-    (128, 255, 128),
-    (128, 255, 255),
+const COLORS: [(u8, u8, u8); 7] = [
     (255, 0, 0),
-    (255, 0, 128),
-    (255, 0, 255),
-    (255, 128, 0),
-    (255, 128, 128),
-    (255, 128, 255),
+    (255, 127, 0),
     (255, 255, 0),
-    (255, 255, 128),
+    (0, 255, 0),
+    (0, 0, 255),
+    (75, 0, 130),
+    (238, 130, 238),
 ];
 
-fn init(app: &App) {
-    let width = 500.0;
-    let height = 500.0;
-    let side_len = 50.0;
-    let mut rng = rand::thread_rng();
+fn main() -> eframe::Result {
+    let option = eframe::NativeOptions {
+        run_and_return: false,
+        ..Default::default()
+    };
 
-    let model = (0..1)
-        .map(|idx| {
-            let vx = rng.gen_range(-5.0..=5.0);
-            let vy = rng.gen_range(-5.0..=5.0);
-            let speed = Vec2 { vx, vy };
-            let x = rng.gen_range(0.0..width - side_len);
-            let y = rng.gen_range(0.0..height - side_len);
-            let (r, g, b) = COLORS[idx % COLORS.len()];
-            let color = Color::from_rgb_u8(r, g, b);
-
-            Data { speed, x, y, color }
-        })
-        .collect::<VecModel<_>>();
-
-    app.set_win_width(width);
-    app.set_win_height(height);
-    app.set_side_len(side_len);
-    app.set_boxes(ModelRc::new(model));
+    eframe::run_native(
+        "Ping Pong Boxes",
+        option,
+        Box::new(|_| Ok(<Box<MyApp>>::default())),
+    )
 }
 
-fn main() -> Result<(), slint::PlatformError> {
-    let app = App::new()?;
-
-    init(&app);
-    on_newse(&app);
-    on_update(&app);
-    moves::on_moves(&app);
-
-    app.run()
+#[derive(Debug, Default, PartialEq)]
+enum DragMode {
+    #[default]
+    Collect,
+    Follow,
 }
 
-fn on_newse(app: &App) {
-    let ui = app.clone_strong();
-    app.on_newse(move |number, size, speed| {
-        let width = ui.get_win_width();
-        let height = ui.get_win_height();
-        let side_len = size;
-        let mut rng = rand::thread_rng();
-
-        let model = (0..number)
-            .map(|idx| {
-                let vx = rng.gen_range(-speed..=speed);
-                let vy = rng.gen_range(-speed..=speed);
-                let speed = Vec2 { vx, vy };
-                let x = rng.gen_range(0.0..width - side_len);
-                let y = rng.gen_range(0.0..height - side_len);
-                let (r, g, b) = COLORS[idx as usize % COLORS.len()];
-                let color = Color::from_rgb_u8(r, g, b);
-
-                Data { speed, x, y, color }
-            })
-            .collect::<VecModel<_>>();
-
-        ui.set_win_width(width);
-        ui.set_win_height(height);
-        ui.set_side_len(side_len);
-        ui.set_boxes(ModelRc::new(model));
-    });
+impl Display for DragMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let txt = match self {
+            Self::Collect => "Collect",
+            Self::Follow => "Follow",
+        };
+        write!(f, "{txt}")
+    }
 }
 
-fn on_update(app: &App) {
-    let ui = app.clone_strong();
-    app.on_update(move || {
-        let boxes = ui.get_boxes();
-        let side_len = ui.get_side_len();
-        let width = ui.get_win_width();
-        let height = ui.get_win_height();
+#[derive(Debug)]
+struct MyApp {
+    setup: bool,
 
-        let newboxes = boxes
-            .iter()
-            .map(|mut abox| {
-                abox.x += abox.speed.vx;
-                abox.y += abox.speed.vy;
+    number: usize,
+    box_size: f32,
+    boxes: Vec<egui::Shape>,
+    boxes_speeds: Vec<egui::Vec2>,
+    speed_range: RangeInclusive<f32>,
 
-                if abox.x <= 0.0 || abox.x >= width - side_len {
-                    abox.speed.vx = -abox.speed.vx;
+    t_number: String,
+    t_boxes_size: String,
+    t_speed_range: String,
+
+    draggable: bool,
+    drag_mode: DragMode,
+}
+
+impl Default for MyApp {
+    fn default() -> Self {
+        Self {
+            setup: false,
+
+            number: 10,
+            box_size: 10.0,
+            boxes: vec![],
+            boxes_speeds: vec![],
+            speed_range: -1.0..=1.0,
+
+            t_number: "10".to_string(),
+            t_boxes_size: "10.0".to_string(),
+            t_speed_range: "1.0".to_string(),
+
+            draggable: true,
+            drag_mode: DragMode::default(),
+        }
+    }
+}
+
+fn build_sqare(size: f32, pos: (f32, f32), fill_color: egui::Color32) -> egui::Shape {
+    let x_range = pos.0..=pos.0 + size;
+    let y_range = pos.1..=pos.1 + size;
+    let rect = egui::Rect::from_x_y_ranges(x_range, y_range);
+    let rounding = egui::Rounding::ZERO;
+    egui::Shape::rect_filled(rect, rounding, fill_color)
+}
+
+impl eframe::App for MyApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ctx.request_repaint();
+
+        let screen = ctx.input(|i| i.screen_rect);
+
+        //setup
+        if !self.setup {
+            let mut rng = rand::thread_rng();
+
+            self.boxes_speeds.clear();
+            self.boxes = (0..self.number)
+                .map(|idx| {
+                    let xs = rng.gen_range(self.speed_range.clone());
+                    let ys = rng.gen_range(self.speed_range.clone());
+                    self.boxes_speeds.push(egui::vec2(xs, ys));
+
+                    //build boxes
+                    let x = rng.gen_range(0.0..=screen.width() - self.box_size);
+                    let y = rng.gen_range(0.0..=screen.height() - self.box_size);
+                    let (r, g, b) = COLORS[idx % COLORS.len()];
+                    let fill_color = egui::Color32::from_rgb(r, g, b);
+
+                    build_sqare(self.box_size, (x, y), fill_color)
+                })
+                .collect();
+
+            self.setup = true;
+            return;
+        }
+
+        //normal update
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let response = ui.interact(ui.max_rect(), ui.id(), egui::Sense::drag());
+            ctx.input(|i| {
+                for event in &i.events {
+                    if let egui::Event::Key {
+                        key,
+                        pressed,
+                        repeat,
+                        physical_key: _,
+                        modifiers: _,
+                    } = event
+                    {
+                        if *key == egui::Key::D && *pressed && !*repeat {
+                            self.draggable = !self.draggable;
+                        }
+                    }
                 }
-                if abox.y <= 0.0 || abox.y >= height - side_len {
-                    abox.speed.vy = -abox.speed.vy;
+            });
+
+            //ui
+            egui::SidePanel::left(egui::Id::new("new session"))
+                .show_separator_line(false)
+                .resizable(false)
+                .show_inside(ui, |ui| {
+                    ui.spacing_mut().text_edit_width = 80.0;
+                    ui.spacing_mut().button_padding.x = 15.0;
+
+                    ui.label("number:");
+                    let _ = ui.text_edit_singleline(&mut self.t_number);
+                    ui.label("box size:");
+                    let _ = ui.text_edit_singleline(&mut self.t_boxes_size);
+                    ui.label("speed:");
+                    let _ = ui.text_edit_singleline(&mut self.t_speed_range);
+                    ui.add_space(5.0);
+                    let btn = ui.button("new");
+
+                    if btn.clicked() {
+                        if let Ok(n) = self.t_number.trim().parse::<usize>() {
+                            self.number = n;
+                        }
+                        if let Ok(s) = self.t_boxes_size.trim().parse::<f32>() {
+                            self.box_size = s;
+                        }
+                        if let Ok(s) = self.t_speed_range.trim().parse::<f32>() {
+                            self.speed_range = -s..=s;
+                        }
+                        self.setup = false;
+                    }
+                });
+            egui::SidePanel::right(egui::Id::new("control drag"))
+                .show_separator_line(false)
+                .resizable(false)
+                .show_inside(ui, |ui| {
+                    ui.checkbox(&mut self.draggable, "enable drag");
+                    egui::ComboBox::from_id_salt("drag mode")
+                        .selected_text(self.drag_mode.to_string())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.drag_mode,
+                                DragMode::Collect,
+                                DragMode::Collect.to_string(),
+                            );
+                            ui.selectable_value(
+                                &mut self.drag_mode,
+                                DragMode::Follow,
+                                DragMode::Follow.to_string(),
+                            );
+                        });
+                });
+
+            //normal moves
+            for (idx, abox) in self.boxes.iter_mut().enumerate() {
+                if !response.dragged() || !self.draggable {
+                    abox.translate(self.boxes_speeds[idx]);
+
+                    if let egui::Shape::Rect(rect) = abox {
+                        let x = (rect.rect.max.x + rect.rect.min.x) / 2.0;
+                        let y = (rect.rect.max.y + rect.rect.min.y) / 2.0;
+
+                        if x <= 0.0 || x >= screen.width() {
+                            self.boxes_speeds[idx].x *= -1.0;
+                        }
+                        if y <= 0.0 || y >= screen.height() {
+                            self.boxes_speeds[idx].y *= -1.0;
+                        }
+                    }
+
+                    continue;
                 }
 
-                abox
-            })
-            .collect::<VecModel<_>>();
+                //drag mode
+                if let egui::Shape::Rect(rect) = abox {
+                    match self.drag_mode {
+                        DragMode::Collect => {
+                            let scale = rect.rect.max - rect.rect.min;
+                            rect.rect.min = response.interact_pointer_pos().unwrap();
+                            rect.rect.max = rect.rect.min + scale;
+                        }
+                        DragMode::Follow => {
+                            let delta = response.interact_pointer_pos().unwrap() - rect.rect.min;
+                            self.boxes_speeds[idx] =
+                                self.boxes_speeds[idx].length() * delta.normalized();
+                            abox.translate(self.boxes_speeds[idx]);
+                        }
+                    }
+                }
+            }
 
-        ui.set_boxes(ModelRc::new(newboxes));
-    });
+            ui.painter().extend(self.boxes.clone());
+        });
+    }
 }
