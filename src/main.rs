@@ -16,10 +16,7 @@ const COLORS: [(u8, u8, u8); 7] = [
 ];
 
 fn main() -> eframe::Result {
-    let option = eframe::NativeOptions {
-        run_and_return: false,
-        ..Default::default()
-    };
+    let option = eframe::NativeOptions::default();
 
     eframe::run_native(
         "Ping Pong Boxes",
